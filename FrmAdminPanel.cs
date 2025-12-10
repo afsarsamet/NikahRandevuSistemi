@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -8,7 +8,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Data.SqlClient;
-namespace NikahRandevuSistemi
+
+namespace NikahRandevu0
 {
     public partial class FrmAdminPanel : Form
     {
@@ -24,9 +25,11 @@ namespace NikahRandevuSistemi
         }
         private void RandevulariYukle()
         {
+            
+        
             try
             {
-                using (SqlConnection conn = Veritabani.BaglantiGetir())
+                using (SqlConnection conn = Db.GetConnection())
                 {
                     string sql = @"
                 SELECT 
@@ -41,7 +44,8 @@ namespace NikahRandevuSistemi
                     Sahit2TC,
                     Sahit2AdSoyad,
                     Tarih,
-                    Saat
+                    Saat,
+                    Durum          -- 🔴 BUNU EKLEDİK
                 FROM randevular
                 ORDER BY Tarih, Saat";
 
@@ -50,21 +54,19 @@ namespace NikahRandevuSistemi
                         DataTable dt = new DataTable();
                         da.Fill(dt);
 
-                        // !!! Dikkat: DataGridView adın ne ise onu yaz
                         dgvRandevular.DataSource = dt;
-                        // eğer adını değiştirmediysen: dataGridView1.DataSource = dt; yazman gerek
                     }
                 }
 
                 dgvRandevular.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
-                // Eğer dgvRandevular yoksa ve hala dataGridView1 ise:
-                // dataGridView1.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             }
             catch (Exception ex)
             {
                 MessageBox.Show("Randevular yüklenirken hata: " + ex.Message);
             }
         }
+
+        
         private int? SeciliRandevuIdGetir()
         {
             if (dgvRandevular.CurrentRow == null)
@@ -88,7 +90,7 @@ namespace NikahRandevuSistemi
             }
 
             var sonuc = MessageBox.Show(
-                "Bu randevuyu iptal etmek istiyor musunuz?",
+                "Bu randevuyu silmeyi onaylıyor musunuz?",
                 "Onay",
                 MessageBoxButtons.YesNo,
                 MessageBoxIcon.Question
@@ -99,7 +101,7 @@ namespace NikahRandevuSistemi
 
             try
             {
-                using (SqlConnection conn = Veritabani.BaglantiGetir())
+                using (SqlConnection conn =Db.GetConnection())
                 {
                     conn.Open();
                     SqlCommand cmd = new SqlCommand(
@@ -108,12 +110,12 @@ namespace NikahRandevuSistemi
                     cmd.ExecuteNonQuery();
                 }
 
-                MessageBox.Show("Randevu iptal edildi.");
+                MessageBox.Show("Randevu silindi");
                 RandevulariYukle();
             }
             catch (Exception ex)
             {
-                MessageBox.Show("İptal sırasında hata: " + ex.Message);
+                MessageBox.Show("Silinme sırasında hata: " + ex.Message);
             }
         }
 
@@ -161,7 +163,7 @@ namespace NikahRandevuSistemi
 
             try
             {
-                using (SqlConnection conn = Veritabani.BaglantiGetir())
+                using (SqlConnection conn = Db.GetConnection())
                 {
                     conn.Open();
 
@@ -205,5 +207,52 @@ namespace NikahRandevuSistemi
                 MessageBox.Show("Güncelleme sırasında hata: " + ex.Message);
             }
         }
+
+        private void btnDurumuPasifYap_Click(object sender, EventArgs e)
+        {
+            
+        
+            int? id = SeciliRandevuIdGetir();
+            if (id == null)
+            {
+                MessageBox.Show("Lütfen bir randevu seçin.");
+                return;
+            }
+
+            var sonuc = MessageBox.Show(
+                "Bu randevunun durumunu PASİF yapmak istiyor musunuz?",
+                "Onay",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question
+            );
+
+            if (sonuc != DialogResult.Yes)
+                return;
+
+            try
+            {
+                using (SqlConnection conn = Db.GetConnection())
+                {
+                    conn.Open();
+                    SqlCommand cmd = new SqlCommand(
+                        "UPDATE randevular SET Durum = 'Pasif' WHERE RandevuID = @id", conn);
+                    cmd.Parameters.AddWithValue("@id", id.Value);
+                    cmd.ExecuteNonQuery();
+                }
+
+                MessageBox.Show("Randevu durumu PASİF yapıldı.");
+                RandevulariYukle();   // grid’i yenile
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Durum güncellenirken hata: " + ex.Message);
+            }
+        }
+
+        private void btnYenile_Click(object sender, EventArgs e)
+        {
+
+        }
     }
 }
+
