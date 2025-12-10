@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Data.SqlClient;
 
-namespace Nikah_Randevu_Sistemi_Login
+namespace NikahRandevu0
 {
     public partial class FrmKayit : Form
     {
@@ -25,7 +25,11 @@ namespace Nikah_Randevu_Sistemi_Login
 
         private void btnSave_Click(object sender, EventArgs e)
         {
-            
+            if (Araclar.TCKontrol(txtTC.Text) == false)
+            {
+                MessageBox.Show("Hatalı TC girdiniz!");
+                return;
+            }
             if (string.IsNullOrWhiteSpace(txtTC.Text) ||
                 string.IsNullOrWhiteSpace(txtAd.Text) ||
                 string.IsNullOrWhiteSpace(txtSoyad.Text) ||
@@ -53,7 +57,7 @@ namespace Nikah_Randevu_Sistemi_Login
                 return;
             }
 
-            using (SqlConnection conn = new SqlConnection(DbConfig.ConnectionString))
+            using(SqlConnection conn = Db.GetConnection())
             {
                 conn.Open();
 
@@ -111,5 +115,35 @@ namespace Nikah_Randevu_Sistemi_Login
         {
             this.Close();
         }
+
+        private void FrmKayit_Load(object sender, EventArgs e)
+        {
+
+        }
+
+        private void FrmKayit_Load_1(object sender, EventArgs e)
+        {
+
+        }
+
+        private void txtTC_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            if (!char.IsControl(e.KeyChar) && !char.IsDigit(e.KeyChar))
+            {
+                e.Handled = true; 
+            }
+        }
+
+        private void txtTel_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            if (!char.IsControl(e.KeyChar) && !char.IsDigit(e.KeyChar))
+            {
+                e.Handled = true; 
+            }
+        }
     }
+
+
+
+
 }
