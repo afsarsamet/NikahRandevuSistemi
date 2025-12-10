@@ -1,7 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Windows.Forms;
+using System.Net.Http;
+using System.Text;
+using System.Threading.Tasks;
+
 
 namespace NikahRandevu0
 {
@@ -14,13 +18,13 @@ namespace NikahRandevu0
 
         private void FrmRandevuOlustur_Load(object sender, EventArgs e)
         {
-            
+
             dtRandevuTarih_ValueChanged(null, null);
         }
 
         private void dtRandevuTarih_ValueChanged(object sender, EventArgs e)
         {
-            cmbSaat.Items.Clear(); 
+            cmbSaat.Items.Clear();
 
             DateTime secilenTarih = dtRandevuTarih.Value.Date;
 
@@ -28,7 +32,7 @@ namespace NikahRandevu0
             {
                 conn.Open();
 
-                
+
                 List<string> doluSaatler = new List<string>();
 
                 string sqlDolu = @"
@@ -50,7 +54,7 @@ namespace NikahRandevu0
                     }
                 }
 
-                
+
                 string sqlSlot = "SELECT Saat FROM SaatSlotlari ORDER BY Saat";
 
                 using (SqlCommand cmdSlot = new SqlCommand(sqlSlot, conn))
@@ -67,8 +71,29 @@ namespace NikahRandevu0
             }
         }
 
-        private void btnRandevuOlustur_Click(object sender, EventArgs e)
+        private async void btnRandevuOlustur_Click(object sender, EventArgs e)
         {
+            if (string.IsNullOrWhiteSpace(txtGelinTC.Text) ||
+    string.IsNullOrWhiteSpace(txtGelinAdSoyad.Text) ||
+    string.IsNullOrWhiteSpace(txtDamatTC.Text) ||
+    string.IsNullOrWhiteSpace(txtDamatAdSoyad.Text) ||
+    string.IsNullOrWhiteSpace(txtSahit1TC.Text) ||
+    string.IsNullOrWhiteSpace(txtSahit1AdSoyad.Text) ||
+    string.IsNullOrWhiteSpace(txtSahit2TC.Text) ||
+    string.IsNullOrWhiteSpace(txtSahit2AdSoyad.Text))
+            {
+                MessageBox.Show("Lütfen tüm alanları eksiksiz doldurunuz!", "Uyarı", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return; 
+            }
+            
+            if (!Araclar.TCKontrol(txtDamatTC.Text) ||
+    !Araclar.TCKontrol(txtGelinTC.Text) ||
+    !Araclar.TCKontrol(txtSahit1TC.Text) ||
+    !Araclar.TCKontrol(txtSahit2TC.Text))
+            {
+                MessageBox.Show("TC Kimlik numaralarından biri veya birkaçı hatalı!");
+                return;
+            }
             if (cmbSaat.SelectedItem == null)
             {
                 MessageBox.Show("Lütfen saat seçiniz!");
@@ -77,13 +102,13 @@ namespace NikahRandevu0
 
             DateTime tarih = dtRandevuTarih.Value.Date;
             string saat = cmbSaat.SelectedItem.ToString();
-            int salonId = 5700; 
+            int salonId = 5700;
 
             using (SqlConnection conn = Db.GetConnection())
             {
                 conn.Open();
 
-               
+
                 string kontrolSql = @"
             SELECT COUNT(*) 
             FROM Randevular
@@ -107,7 +132,7 @@ namespace NikahRandevu0
                     }
                 }
 
-                
+
                 string sql = @"
     INSERT INTO Randevular
     (UserID, 
@@ -126,40 +151,118 @@ namespace NikahRandevu0
 
                 using (SqlCommand cmd = new SqlCommand(sql, conn))
                 {
-                    
+
                     cmd.Parameters.AddWithValue("@UserID", Session.UserID);
 
-                    
+
                     cmd.Parameters.AddWithValue("@GelinTC", txtGelinTC.Text);
                     cmd.Parameters.AddWithValue("@GelinAdSoyad", txtGelinAdSoyad.Text);
                     cmd.Parameters.AddWithValue("@GelinDogum", dtGelinDogum.Value.Date);
 
-                   
+
                     cmd.Parameters.AddWithValue("@DamatTC", txtDamatTC.Text);
                     cmd.Parameters.AddWithValue("@DamatAdSoyad", txtDamatAdSoyad.Text);
                     cmd.Parameters.AddWithValue("@DamatDogum", dtDamatDogum.Value.Date);
 
-                    
+
                     cmd.Parameters.AddWithValue("@S1AdSoyad", txtSahit1AdSoyad.Text);
                     cmd.Parameters.AddWithValue("@S1TC", txtSahit1TC.Text);
                     cmd.Parameters.AddWithValue("@S2AdSoyad", txtSahit2AdSoyad.Text);
                     cmd.Parameters.AddWithValue("@S2TC", txtSahit2TC.Text);
 
-                   
+
                     cmd.Parameters.AddWithValue("@Tarih", tarih);
                     cmd.Parameters.AddWithValue("@Saat", saat);
                     cmd.Parameters.AddWithValue("@SalonID", salonId);
 
                     cmd.ExecuteNonQuery();
+                    await MailWebhookGonderAsync();
                 }
             }
 
             MessageBox.Show("Randevunuz başarıyla oluşturuldu!");
 
-            FrmRandevuListele frm = new FrmRandevuListele(Session.UserID); 
-            frm.ShowDialog();
+
         }
 
+        private void btnRandevularim_Click(object sender, EventArgs e)
+        {
+            this.Hide();
+            FrmRandevuListele frm = new FrmRandevuListele(Session.UserID);
+            frm.ShowDialog();   
+            this.Show();
 
+        }
+
+        private void buttonCikis_Click(object sender, EventArgs e)
+        {
+            this.Close();
+        }
+
+        private void txtDamatTC_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            if (!char.IsControl(e.KeyChar) && !char.IsDigit(e.KeyChar))
+            {
+                e.Handled = true; 
+            }
+        }
+
+        private void txtGelinTC_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            if (!char.IsControl(e.KeyChar) && !char.IsDigit(e.KeyChar))
+            {
+                e.Handled = true; 
+            }
+        }
+
+        private void txtSahit1TC_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            if (!char.IsControl(e.KeyChar) && !char.IsDigit(e.KeyChar))
+            {
+                e.Handled = true; 
+            }
+        }
+
+        private void txtSahit2TC_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            if (!char.IsControl(e.KeyChar) && !char.IsDigit(e.KeyChar))
+            {
+                e.Handled = true; 
+            }
+        }
+        private async Task MailWebhookGonderAsync()
+        {
+            string webhookUrl = "https://nikahrandevu.app.n8n.cloud/webhook/NikahRandevu"; 
+
+            string email = Session.Email;                
+            string gelinAd = txtGelinAdSoyad.Text;
+            string damatAd = txtDamatAdSoyad.Text;
+            string tarih = dtRandevuTarih.Value.ToString("yyyy-MM-dd");
+            string saat = cmbSaat.SelectedItem.ToString();
+
+            string json = $@"
+{{
+  ""email"": ""{email}"",
+  ""gelinAdSoyad"": ""{gelinAd}"",
+  ""damatAdSoyad"": ""{damatAd}"",
+  ""tarih"": ""{tarih}"",
+  ""saat"": ""{saat}""
+}}";
+
+            using (var client = new HttpClient())
+            {
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                try
+                {
+                    var response = await client.PostAsync(webhookUrl, content);
+                   
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Mail webhook gönderilirken hata: " + ex.Message);
+                }
+            }
+        }
     }
 }
