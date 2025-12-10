@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -51,18 +51,18 @@ namespace NikahRandevu0
 
         private void btnIptalEt_Click(object sender, EventArgs e)
         {
-           
+
             if (dgvRandevular.CurrentRow == null)
             {
                 MessageBox.Show("Lütfen iptal etmek istediğiniz randevuyu seçin.");
                 return;
             }
 
-            
+
             int randevuID = Convert.ToInt32(dgvRandevular.CurrentRow.Cells["RandevuID"].Value);
             DateTime tarih = Convert.ToDateTime(dgvRandevular.CurrentRow.Cells["Tarih"].Value);
 
-            
+
             double kalanGun = (tarih - DateTime.Now.Date).TotalDays;
 
             if (kalanGun < 10)
@@ -71,7 +71,7 @@ namespace NikahRandevu0
                 return;
             }
 
-            
+
             var sonuc = MessageBox.Show("Bu randevuyu iptal etmek istediğinize emin misiniz?",
                                         "Onay",
                                         MessageBoxButtons.YesNo,
@@ -80,7 +80,7 @@ namespace NikahRandevu0
             if (sonuc != DialogResult.Yes)
                 return;
 
-            
+
             using (SqlConnection conn = Db.GetConnection())
             {
                 string sql = "UPDATE Randevular SET Durum = 'İptal' WHERE RandevuID = @id";
@@ -94,8 +94,14 @@ namespace NikahRandevu0
 
             MessageBox.Show("Randevu iptal edildi.");
 
-            
-            FrmRandevuListele_Load(null, null); 
+
+            FrmRandevuListele_Load(null, null);
         }
+
+        private void buttonGeriDon_Click(object sender, EventArgs e)
+        {
+            this.Close();
+        }
+
     }
 }
