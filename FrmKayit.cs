@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Data.SqlClient;
+using RandevuEkranı;
 
 namespace NikahRandevu0
 {
@@ -93,7 +94,8 @@ namespace NikahRandevu0
                     string cinsiyetKodu = cmbCinsiyet.SelectedItem.ToString() == "Erkek" ? "E" : "K";
                     cmd.Parameters.AddWithValue("@Cinsiyet", cinsiyetKodu);
 
-                    cmd.Parameters.AddWithValue("@Sifre", txtSifre.Text.Trim());
+                    string sifreHash=SifreHashleme.HashSifre(txtSifre.Text.Trim());
+                    cmd.Parameters.AddWithValue("@Sifre", sifreHash);
 
                     int rows = cmd.ExecuteNonQuery();
 
