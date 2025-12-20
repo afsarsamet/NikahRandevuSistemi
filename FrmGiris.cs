@@ -1,3 +1,4 @@
+using RandevuEkranı;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -45,8 +46,6 @@ namespace NikahRandevu0
 
         private void btnGiris_Click(object sender, EventArgs e)
         {
-           
-        
             string tc = txtTC.Text.Trim();
             string sifre = txtSifre.Text.Trim();
 
@@ -56,77 +55,82 @@ namespace NikahRandevu0
                 return;
             }
 
-            using (SqlConnection conn = Db.GetConnection())   
+            using (SqlConnection conn = Db.GetConnection())
             {
                 conn.Open();
 
-                
                 string sqlPersonel = @"
-            SELECT PrID, Ad, Soyad 
+            SELECT PrID, Ad, Soyad, Sifre
             FROM personel
-            WHERE TC = @TC AND sifre = @Sifre";   
+            WHERE TC = @TC";
 
                 using (SqlCommand cmdP = new SqlCommand(sqlPersonel, conn))
                 {
                     cmdP.Parameters.AddWithValue("@TC", tc);
-                    cmdP.Parameters.AddWithValue("@Sifre", sifre);
 
                     using (SqlDataReader drP = cmdP.ExecuteReader())
                     {
                         if (drP.Read())
                         {
-                            // ADMIN GİRİŞ
-                            Session.UserID = Convert.ToInt32(drP["PrID"]);
-                            Session.AdSoyad = drP["Ad"] + " " + drP["Soyad"];
-                            Session.IsAdmin = true;
+                            string dbHashP = drP["Sifre"].ToString();
 
-                            MessageBox.Show("Görevli girişi başarılı!");
+                            if (SifreHashleme.VerifyPassword(sifre, dbHashP))
+                            {
+                                Session.UserID = Convert.ToInt32(drP["PrID"]);
+                                Session.AdSoyad = drP["Ad"] + " " + drP["Soyad"];
+                                Session.IsAdmin = true;
 
-                            FrmAdminPanel frmAdmin = new FrmAdminPanel();
-                            frmAdmin.Show();
-                            this.Hide();
-                            return;    
+                                MessageBox.Show("Görevli girişi başarılı!");
+                                new FrmAdminPanel().Show();
+                                this.Hide();
+                                return;
+                            }
                         }
                     }
                 }
 
-                
-                string sqlUser = @"SELECT userID, Ad, Soyad, email 
-                   FROM Users 
-                   WHERE TC = @TC AND Sifre = @Sifre";
-
+ 
+                string sqlUser = @"
+            SELECT userID, Ad, Soyad, Email, Sifre
+            FROM Users
+            WHERE TC = @TC";
 
                 using (SqlCommand cmdU = new SqlCommand(sqlUser, conn))
                 {
                     cmdU.Parameters.AddWithValue("@TC", tc);
-                    cmdU.Parameters.AddWithValue("@Sifre", sifre);
 
                     using (SqlDataReader drU = cmdU.ExecuteReader())
                     {
-                        if (drU.Read())
-                        {
-                            Session.UserID = Convert.ToInt32(drU["userID"]);
-                            Session.AdSoyad = drU["Ad"] + " " + drU["Soyad"];
-                            Session.IsAdmin = false;
-                            Session.Email = drU["Email"].ToString();
-
-                            MessageBox.Show("Giriş başarılı!");
-
-                            FrmRandevuOlustur frm = new FrmRandevuOlustur();
-                            frm.Show();
-                            this.Hide();
-                        }
-                        else
+                        if (!drU.Read())
                         {
                             MessageBox.Show("TC veya Şifre hatalı.");
+                            return;
                         }
+
+                        string dbHashU = drU["Sifre"].ToString();
+
+                        if (!SifreHashleme.VerifyPassword(sifre, dbHashU))
+                        {
+                            MessageBox.Show("TC veya Şifre hatalı.");
+                            return;
+                        }
+
+                        Session.UserID = Convert.ToInt32(drU["userID"]);
+                        Session.AdSoyad = drU["Ad"] + " " + drU["Soyad"];
+                        Session.IsAdmin = false;
+                        Session.Email = drU["Email"].ToString();
+
+                        MessageBox.Show("Giriş başarılı!");
+                        new FrmRandevuOlustur().Show(); // istersen userID yolla: new FrmRandevuOlustur(Session.UserID)
+                        this.Hide();
                     }
                 }
             }
         }
 
 
-        
+
+
 
         private void bntKayitOl_Click(object sender, EventArgs e)
         {
