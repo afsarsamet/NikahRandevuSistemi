@@ -5,12 +5,24 @@ using System.Windows.Forms;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using MaterialSkin;
+using MaterialSkin.Controls;
 
 
 namespace NikahRandevu0
 {
-    public partial class FrmRandevuOlustur : Form
+    public partial class FrmRandevuOlustur : MaterialForm
     {
+        private int YasHesapla(DateTime dogumTarihi)
+        {
+            DateTime bugun = DateTime.Today;
+            int yas = bugun.Year - dogumTarihi.Year;
+
+            if (dogumTarihi.Date > bugun.AddYears(-yas))
+                yas--;
+
+            return yas;
+        }
         public FrmRandevuOlustur()
         {
             InitializeComponent();
@@ -73,6 +85,33 @@ namespace NikahRandevu0
 
         private async void btnRandevuOlustur_Click(object sender, EventArgs e)
         {
+            int gelinYas = YasHesapla(dtGelinDogum.Value.Date);
+            int damatYas = YasHesapla(dtDamatDogum.Value.Date);
+
+            
+            if (gelinYas < 16 || damatYas < 16)
+            {
+                MessageBox.Show("Randevu alamazsınız.");
+                return;
+            }
+
+            
+            if ((gelinYas == 16 || gelinYas == 17) ||
+                (damatYas == 16 || damatYas == 17))
+            {
+                MessageBox.Show(
+                    "Lütfen Belediyeye müracaat ediniz.",
+                    "Uyarı",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information
+                );
+                return;
+            }
+            if (gelinYas > 110 || damatYas > 110)
+            {
+                MessageBox.Show("Lütfen gerçek doğum tarihinizi giriniz.");
+                return;
+            }
             if (string.IsNullOrWhiteSpace(txtGelinTC.Text) ||
     string.IsNullOrWhiteSpace(txtGelinAdSoyad.Text) ||
     string.IsNullOrWhiteSpace(txtDamatTC.Text) ||
@@ -263,6 +302,26 @@ namespace NikahRandevu0
                     MessageBox.Show("Mail webhook gönderilirken hata: " + ex.Message);
                 }
             }
+        }
+
+        private void dtGelinDogum_ValueChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void label1_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void panel1_Paint(object sender, PaintEventArgs e)
+        {
+
+        }
+
+        private void label2_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }
