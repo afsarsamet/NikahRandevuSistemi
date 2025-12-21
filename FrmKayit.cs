@@ -50,6 +50,11 @@ namespace NikahRandevu0
                 MessageBox.Show("T.C. Kimlik Numarası 11 haneli olmalıdır.");
                 return;
             }
+              if (!txtEmail.Text.Contains("@") || !txtEmail.Text.Contains("."))
+            {
+                MessageBox.Show("Geçersiz e-posta adresi.");
+                 return;
+            }
 
             
             if (txtSifre.Text != txtSifre2.Text)
@@ -149,3 +154,4 @@ namespace NikahRandevu0
 
 
 }
+
