@@ -112,6 +112,25 @@ namespace NikahRandevu0
                 MessageBox.Show("Lütfen gerçek doğum tarihinizi giriniz.");
                 return;
             }
+
+            DateTime secilenTarih = dtRandevuTarih.Value.Date;
+            DateTime bugun = DateTime.Today;
+            DateTime maxTarih = bugun.AddMonths(6);
+
+            
+            if (secilenTarih < bugun)
+            {
+                MessageBox.Show("Geçmiş bir tarih için randevu alınamaz.");
+                return;
+            }
+
+            
+            if (secilenTarih > maxTarih)
+            {
+                MessageBox.Show("Sadece önümüzdeki 6 ay için randevu alınabilir.");
+                return;
+            }
+
             if (string.IsNullOrWhiteSpace(txtGelinTC.Text) ||
     string.IsNullOrWhiteSpace(txtGelinAdSoyad.Text) ||
     string.IsNullOrWhiteSpace(txtDamatTC.Text) ||
